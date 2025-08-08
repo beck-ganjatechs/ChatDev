@@ -79,7 +79,9 @@ parser.add_argument('--task', type=str, default="Develop a basic Gomoku game.",
 parser.add_argument('--name', type=str, default="Gomoku",
                     help="Name of software, your software will be generated in WareHouse/name_org_timestamp")
 parser.add_argument('--model', type=str, default="GPT_3_5_TURBO",
-                    help="GPT Model, choose from {'GPT_3_5_TURBO', 'GPT_4', 'GPT_4_TURBO', 'GPT_4O', 'GPT_4O_MINI'}")
+                     help="GPT Model, choose from {'GPT_3_5_TURBO', 'GPT_4', 'GPT_4_TURBO', 'GPT_4O', 'GPT_4O_MINI'}")
+parser.add_argument('--engine', type=str, default="classic",
+                    help="Engine to run: 'classic' or 'langgraph'")
 parser.add_argument('--path', type=str, default="",
                     help="Your file directory, ChatDev will build upon your software in the Incremental mode")
 args = parser.parse_args()
@@ -130,10 +132,25 @@ chat_chain.pre_processing()
 chat_chain.make_recruitment()
 
 # ----------------------------------------
-#          Chat Chain
+#          Chat Chain / Engine
 # ----------------------------------------
 
-chat_chain.execute_chain()
+if args.engine == 'classic':
+    chat_chain.execute_chain()
+else:
+    from chatdev.langgraph_engine import run_langgraph_engine
+    env = run_langgraph_engine(config_path=config_path,
+                               config_phase_path=config_phase_path,
+                               config_role_path=config_role_path,
+                               task_prompt=args.task,
+                               project_name=args.name,
+                               org_name=args.org,
+                               model_type=args2type[args.model],
+                               code_path=args.path,
+                               log_filepath=chat_chain.log_filepath,
+                               existing_env=chat_chain.chat_env)
+    # reuse env for post-processing consistency
+    chat_chain.chat_env = env
 
 # ----------------------------------------
 #          Post Processing
